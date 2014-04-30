@@ -1,0 +1,40 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          etcd
+# Required-Start:    network
+# Required-Stop:
+# Should-Start:      
+# Should-Stop:       
+# X-Start-Before:    
+# X-Stop-After:      
+# Default-Start:     S
+# Default-Stop:
+### END INIT INFO
+
+SCRIPTNAME=/etc/init.d/etcd
+
+. /lib/lsb/init-functions
+
+case "$1" in
+  start)
+	log_action_begin_msg "Starting Etcd"
+	/usr/sbin/etcd >/dev/null &
+	echo $$ > /var/run/etcd.pid
+	log_action_end_msg "$?"
+	;;
+  stop)
+	kill $(< /var/run/etcd.pid)
+	rm /var/run/etcd.pid
+	;;
+  restart)
+	$SCRIPTNAME stop
+	$SCRIPTNAME start
+	;;
+  force-reload|status)
+	;;
+  *)
+	echo "Usage: $SCRIPTNAME start" >&2
+	exit 3
+	;;
+esac
+

@@ -1,0 +1,32 @@
+#!/bin/bash -uex
+sudo apt-get update
+sudo apt-get dist-upgrade -y
+
+echo "golang-go       golang-go/dashboard     boolean false" | sudo debconf-set-selections
+
+export DEBIAN_FRONTEND=noninteractive
+sudo apt-get install -y ruby1.9.1 ruby1.9.1-dev golang git curl
+
+sudo gem install fpm
+
+export GOPATH=$HOME/go
+go get -v github.com/coreos/etcd && cp $GOPATH/bin/etcd /vagrant/root/usr/sbin/
+
+cd /vagrant
+rm *.deb
+
+# Package dev version
+VERSION=$(root/usr/sbin/etcd -version | awk '{print $NF}')
+fpm -t deb -s dir -n etcd -v $VERSION -C root --config-files etc/etcd/etcd.conf .
+
+cd /tmp
+# Download stable
+releasepath=$(curl https://github.com/coreos/etcd/releases | grep linux-amd64.tar.gz | head -n 1 | sed -e 's/^.*"\///;s/".*//')
+curl -LO https://github.com/$releasepath
+tar -zxvf *.tar.gz
+cp etc*/etcd /vagrant/root/usr/sbin/
+
+cd /vagrant
+# package stable version
+VERSION=$(root/usr/sbin/etcd -version | awk '{print $NF}' | sed -e 's/^v//')
+fpm -t deb -s dir -n etcd -v $VERSION -C root --config-files etc/etcd/etcd.conf .
